@@ -1,0 +1,240 @@
+Extracted Requirements
+Functional Requirements
+Data Ingestion (5 internal streams + 3 public portals)
+
+Ingest CSV: internal holdings snapshot (client_id, ISIN, position_type, cut_at, settled qty)
+Ingest HTML table: DP position extract (settled quantity + pending movements, must be kept separate)
+Ingest JSON Lines: internal cash ledger (signed amount_paise, POSTED vs PENDING states)
+Ingest XLSX: bank confirmation (external credit/debit reference and status)
+Ingest CSV: exchange reference (symbol/ISIN/series mapping and reference prices)
+Ingest NSE All Reports (bhavcopy/equity reports) — adapter required
+Ingest BSE Bhav Copy / Market Data Products — adapter required
+Ingest SEBI Circulars — record provenance; a circular is evidence, not a rule engine input
+Normalization Rules
+
+Normalize client identity: strip spaces, lowercase, handle date format variants
+Parse all money in integer paise or exact decimals — no binary floating point
+Handle column reordering, nullable fields, paise vs rupees, comma separators
+Identify holdings by composite key: (client_id, ISIN, position_type, cut_at)
+Quarantine rows that fail normalization with explicit row errors — never silently guess
+Exception / Case Detection
+
+Holding mismatch: quantity_delta = internal_settled_qty - dp_settled_qty at same cut and position_type; nonzero = exception
+DP pending movements displayed separately, never auto-merged into settled quantity
+Cash balance: exact integer sum of POSTED events with effective_at <= cut_at
+Bank entries support cash cases only after human or documented rule verification; duplicated UTRs are ambiguous
+One source absent = MISSING_SOURCE (unknown, not zero)
+States: UNMATCHED_IDENTITY, STALE_CUT, CONFLICTING_EVIDENCE, MISSING_SOURCE, MATCHED
+Case Severity
+
+CRITICAL: wrong client scope, access leak, corrupted source, untrustworthy aggregate
+HIGH: confirmed nonzero settled holding or posted cash mismatch at comparable cut
+MEDIUM: stale/missing/ambiguous evidence preventing reliable comparison
+LOW: informational, no financial discrepancy
+Case Workflow
+
+States: OPEN, INVESTIGATING, NEEDS_SOURCE, RESOLVED, REOPENED
+Audit trail: who changed state, when, why, which evidence version
+Notes may explain but must not rewrite source data
+Auto-reopen a resolved case when relevant evidence changes
+State transition requires reason, expected prior state/version, and role check
+Source Versioning
+
+Import is idempotent for identical bytes (same hash = no-op)
+Changed bytes under same filename = new version requiring explicit comparison
+Prior investigator notes must survive a file correction
+Audit trail per import: source name, cut, received time, file hash, schema, row counts, errors
+Access Control (RBAC)
+
+support: masked client summary only, no raw bank narration, no import controls, no account identifiers
+investigator: can view full case detail and add notes for permitted clients only
+ops_lead: can resolve financial discrepancies, trigger imports, perform state transitions
+auditor: read-only on evidence and history, no edit
+Enforcement at API level, not just UI; an unauthorized request returns a denial regardless of UI state
+API Endpoints
+
+POST /imports — file ingestion, role: ops_lead
+GET /imports/:id — state, source, cut, hash, schema, row counts, errors
+GET /cases?severity=&state=&... — paginated, server-filtered by user scope
+GET /cases/:id — normalized result + source row + version references
+POST /cases/:id/notes — audit-stamped note, role: investigator or ops_lead
+POST /cases/:id/transition — reason, expected prior state/version, role checked
+GET /metrics — queue health, source freshness, import and query timing
+UI Requirements
+
+Case list with filters (severity, state, scope)
+Case detail evidence pane (source name, cut, received time, hash, raw row id, mapping version)
+Distinct "unknown" display when source is absent
+Dashboard with defined counts and labels
+Keyboard accessible; usable on laptop screen
+Loading, error, empty, and restricted states handled explicitly
+Non-Functional Requirements
+Idempotency: repeat import of same file changes nothing; concurrent imports of same report don't double-count
+Concurrency: two workers importing + investigator editing a note must be safe; define conflict behavior for simultaneous state transitions
+Performance target: p95 < 300ms for paginated case list (50 rows) with 100k ledger rows, 10k holdings, 2k simulated readers — document if unattained
+Multi-tenancy (scale): 50 desks, millions of historical events, no cross-desk data leaks
+Observability: operational metrics (import timing, query timing, queue health, source freshness)
+Provenance: every case must trace back to a source row, version, and mapping
+Deliverables
+Source code with migration/seed scripts
+README.md (one command to start, one to test)
+decisions.md (data flow diagram, assumptions, two cases that must stay UNKNOWN)
+AI_USAGE.md
+Tests for idempotent import, note preservation, concurrent imports, access denial
+Screenshots or local demo
+Application Architecture & Development Outline
+1. Technology Stack (recommended for a local demo)
+Layer	Choice	Rationale
+Backend	Node.js + TypeScript (Fastify or Express)	Typed domain models, fast JSON, good stream handling
+Database	PostgreSQL (or SQLite for minimal local setup)	JSONB for raw rows, window functions for cuts, row-level security for RBAC
+ORM / Query	Knex or Prisma	Migration support; raw SQL for perf-critical queries
+Frontend	React + TypeScript (Vite)	Component per state (loading/error/empty/restricted), keyboard accessible
+Auth	JWT + local demo identity store	No live broker SSO needed; roles encoded in token
+Testing	Vitest + Supertest	API integration tests; seed-based fixture tests
+2. Overall Architecture
+
+┌─────────────────────────────────────────────────────────┐
+│                        Frontend (React)                 │
+│  CaseList │ CaseDetail │ EvidencePane │ ImportStatus    │
+└────────────────────┬────────────────────────────────────┘
+                     │ REST (role-scoped JWT)
+┌────────────────────▼────────────────────────────────────┐
+│                    API Layer (Fastify/Express)           │
+│  /imports  /cases  /cases/:id/notes  /cases/:id/transition  /metrics │
+└──────┬──────────────┬──────────────────┬────────────────┘
+       │              │                  │
+┌──────▼──────┐ ┌─────▼──────┐ ┌────────▼────────┐
+│ Ingest      │ │ Case       │ │ Auth / RBAC     │
+│ Service     │ │ Service    │ │ Middleware      │
+│ (adapters)  │ │ (rules)    │ │ (scope filter)  │
+└──────┬──────┘ └─────┬──────┘ └────────┬────────┘
+       │              │                 │
+┌──────▼──────────────▼─────────────────▼────────┐
+│                   Database (PostgreSQL)         │
+│  source_files │ raw_rows │ normalized_holdings  │
+│  cash_events  │ cases    │ case_notes │ audit   │
+└─────────────────────────────────────────────────┘
+3. Database Schema (core tables)
+sql
+
+-- Source file versioning
+source_files(id, stream_name, cut_at, received_at, filename, sha256_hash, schema_version, row_count, error_count, status)
+
+-- Raw rows preserved per version
+raw_rows(id, source_file_id, row_index, raw_json)
+
+-- Normalized holdings
+normalized_holdings(id, source_file_id, client_id, isin, position_type, cut_at, settled_qty, pending_qty, exchange_symbol, series, raw_row_id)
+
+-- Cash events
+cash_events(id, source_file_id, client_id, event_id, amount_paise, state, effective_at, raw_row_id)
+
+-- Bank entries
+bank_entries(id, source_file_id, client_id, utr_reference, direction, amount_paise, bank_status, value_date, raw_row_id)
+
+-- Exchange reference
+exchange_reference(id, source_file_id, isin, symbol, series, reference_price_paise, raw_row_id)
+
+-- Cases
+cases(id, case_type, severity, state, client_id, isin, cut_at, quantity_delta, amount_delta_paise, created_at, updated_at)
+
+-- Case evidence links (source row + version)
+case_evidence(id, case_id, source_file_id, raw_row_id, mapping_version, role)
+
+-- Case notes and audit
+case_notes(id, case_id, author_user_id, body, created_at, evidence_version_snapshot)
+case_state_transitions(id, case_id, from_state, to_state, reason, user_id, evidence_version, changed_at)
+
+-- Users and RBAC
+users(id, username, role, accessible_client_ids[])
+4. Key Feature Modules
+A. Ingest Service (Adapter Pattern)
+Each stream gets its own adapter behind a shared interface:
+
+typescript
+
+interface StreamAdapter {
+  streamName: string;
+  parse(raw: Buffer, filename: string): ParseResult;
+  normalize(rows: RawRow[]): NormalizedResult;
+  detectCut(rows: RawRow[]): Date;
+}
+Adapters: HoldingsCSVAdapter, DPHTMLAdapter, CashLedgerJSONLAdapter, BankXLSXAdapter, ExchangeCSVAdapter, NSEBhavcopyAdapter, BSEBhavcopyAdapter
+
+Import flow:
+
+Hash the file — if hash exists for this stream+cut → no-op (idempotent)
+Persist raw rows to raw_rows
+Normalize and persist to domain tables
+Run case detection rules
+Emit import status event
+B. Case Detection Engine
+Rules run after each import, comparing compatible cuts:
+
+Holding mismatch rule: join normalized_holdings on (client_id, ISIN, position_type, cut_at) for internal vs DP; any nonzero delta → HIGH case
+Pending DP rule: DP rows with movement_state=PENDING → MEDIUM case, displayed separately
+Cash reconciliation rule: compute posted sum in paise; compare to bank entries after human-match flag; unmatched UTR → MEDIUM/CONFLICTING_EVIDENCE
+Missing source rule: if any expected stream is absent for a cut → MISSING_SOURCE case, severity MEDIUM
+ISIN cross-stream rule: ISIN joins only, never display symbol joins; unmatched symbol → exception
+C. RBAC Middleware
+Every API route checks JWT role. Scope filter applied at query time (not just UI):
+
+support → client_id masked, no raw_rows exposed, no import routes
+investigator → full case detail for accessible_client_ids only
+ops_lead → all investigator rights + import + state transition to RESOLVED
+auditor → read-only everything, no notes or transitions
+D. Source Versioning & Audit
+Every import stores hash; duplicate hash = 200 OK, no-op
+New hash for same stream+cut = new source_file version; old version retained
+Case evidence links point to specific source_file_id so notes reference a frozen snapshot
+Corrected file triggers re-evaluation of affected cases; resolved cases reopen if delta changes
+E. Metrics Endpoint
+GET /metrics returns:
+
+Queue depth (pending imports)
+Per-stream source freshness (age of latest cut)
+Import p50/p95 timing (last 100 imports)
+Case list query p50/p95
+Open case count by severity
+5. Data Flow
+
+[Raw file arrives]
+      │
+      ▼
+[Hash check] ──→ [Identical hash] ──→ [No-op, return existing import ID]
+      │
+      ▼ (new or updated)
+[Persist source_file record + raw_rows]
+      │
+      ▼
+[Adapter: parse + normalize]
+      │
+      ▼
+[Domain tables: holdings / cash_events / bank_entries / exchange_ref]
+      │
+      ▼
+[Case detection engine] ──→ [Create/update cases + case_evidence links]
+      │
+      ▼
+[Re-evaluate open cases at same cut] ──→ [Reopen RESOLVED if delta changed]
+      │
+      ▼
+[API serves cases, filtered by user scope]
+      │
+      ▼
+[UI: CaseList → CaseDetail → EvidencePane → Notes/Transition]
+6. Development Levels (phased delivery)
+Phase	Scope	Key Output
+Level 0	Data flow diagram, 5 clarification questions, identify 2 UNKNOWN cases, assumptions	decisions.md
+Level 1	Parse all 5 streams, normalize, persist, case detection rules, read-only case list + detail API, basic UI with filters and evidence pane	Reproducible import, visible holding mismatch + ambiguous cash + pending DP item with provenance
+Level 2	JWT auth + demo identities, server-side RBAC, case notes + status transitions + audit, severity, pagination, import status, responsive UI with all states	Support user sees masked data; investigator adds note; unauthorized request denied at API
+Level 3	Adapter interface abstraction, alternate column mappings, idempotent import, concurrent import safety, corrected file versioning with comparison, pagination under load, operational metrics	Repeat import = no change; changed bytes = version comparison; concurrent retries = no double-count
+Level 4	Live: respond to new evidence packet, analyze access defect, profile slow query, propose scale plan	Live screen-share exercise
+7. Critical Design Decisions to Document in decisions.md
+ISIN is the only security key — display symbol is metadata only; cross-stream joins on ISIN exclusively
+Paise arithmetic — all monetary values stored and computed as integers; no floats
+Pending ≠ Settled — PENDING DP movements never collapse into settled quantity
+Missing source = UNKNOWN — silence from a stream is never treated as zero
+Import idempotency — SHA-256 hash gates all re-ingestion; same bytes, same result
+Conflict on simultaneous state transitions — optimistic locking on (case_id, expected_state, expected_version); second writer gets a 409 Conflict
+Two cases that must stay UNKNOWN — (a) a holding where the DP file has not yet arrived for that cut; (b) a cash event where the bank UTR is duplicated and no human match rule has been approved

@@ -1,0 +1,9 @@
+{
+  "SHA256SUMS.json": "0f9bf2c3afab236a4fd9d1c3516ceba36dc84ba6af28dfede81f78cdfe625d2f",
+  "access_scopes.json": "b1875a753198e2ec422e8222addd0e0599f6d66e47727633583e5203b5bc7a0b",
+  "bank_confirmation.xlsx": "ba45c7a37c0f75fa20b731abb7bdab00e9b793cce5732398f2d08b43d8c58643",
+  "dp_positions.html": "a1094a09fa7f5f5f7545d485b2e4d749b9b3840fe112193e3a15c2dfa26f3144",
+  "exchange_reference.csv": "c6d80f77c04294e2c088cbdaf15eb561776a79e694b27f0a5686eff266f44b22",
+  "internal_holdings.csv": "bdfba23834b1ab456af17de44fb5adf4070e0c33b01c6573f96f3ad52c9ee442",
+  "ledger_events.jsonl": "451fa0f1bde74c6eda9671a8aedb4512a8ba487838bb516bd143821a55bbb4cb"
+}

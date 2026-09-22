@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: ops-console
+
+  datasource:
+    url: jdbc:sqlite:${DB_PATH:./data/ops_console.db}
+    driver-class-name: org.sqlite.JDBC
+
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:56O8RAo9CE1PKfrh3r2ke53MGwP5Yd2OI60VGuXUQ33YPAVz8e3yCjmdaKgL7vzpg3sn4VPkW3tT2EFFByXiSA==}
+    expiration-ms: 86400000
+    # 24 hours
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.indira: DEBUG
+    org.springframework.security: INFO

@@ -1,0 +1,16 @@
+{
+  "generated_at": "2024-09-16T18:00:00Z",
+  "description": "Synthetic client ownership and demo user access map for assessment",
+  "clients": [
+    {"client_id":"CLI-001","masked_name":"Client Alpha","desk_id":"DESK-A","account_type":"INDIVIDUAL"},
+    {"client_id":"CLI-002","masked_name":"Client Beta","desk_id":"DESK-A","account_type":"INDIVIDUAL"},
+    {"client_id":"CLI-003","masked_name":"Client Gamma","desk_id":"DESK-A","account_type":"CORPORATE"},
+    {"client_id":"CLI-004","masked_name":"Client Delta","desk_id":"DESK-A","account_type":"INDIVIDUAL"}
+  ],
+  "demo_users": [
+    {"username":"support1","role":"SUPPORT","accessible_clients":["CLI-001","CLI-002"]},
+    {"username":"invest1","role":"INVESTIGATOR","accessible_clients":["CLI-001","CLI-002","CLI-003"]},
+    {"username":"opsleader","role":"OPS_LEAD","accessible_clients":["CLI-001","CLI-002","CLI-003","CLI-004"]},
+    {"username":"auditor1","role":"AUDITOR","accessible_clients":["CLI-001","CLI-002","CLI-003","CLI-004"]}
+  ]
+}

@@ -1,0 +1,8 @@
+com\indira\opsconsole\AbstractIntegrationTest.class
+com\indira\opsconsole\detection\NotePreservationTest.class
+com\indira\opsconsole\detection\CaseDetectionTest.class
+com\indira\opsconsole\security\AccessDenialTest.class
+com\indira\opsconsole\ingest\NormalizationUtilTest.class
+com\indira\opsconsole\ingest\HoldingsAdapterTest.class
+com\indira\opsconsole\ingest\IdempotentImportTest.class
+com\indira\opsconsole\detection\OptimisticLockTest.class

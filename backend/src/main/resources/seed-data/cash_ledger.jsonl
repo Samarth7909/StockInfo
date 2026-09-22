@@ -1,0 +1,13 @@
+{"event_id":"EVT-001","client_id":"CLI-001","amount_paise":500000000,"state":"POSTED","effective_at":"2024-09-16T10:00:00","narration":"FD maturity credit"}
+{"event_id":"EVT-002","client_id":"CLI-001","amount_paise":-150000000,"state":"POSTED","effective_at":"2024-09-16T11:30:00","narration":"Equity purchase debit"}
+{"event_id":"EVT-003","client_id":"CLI-001","amount_paise":75000000,"state":"PENDING","effective_at":"2024-09-16T17:00:00","narration":"Bank transfer pending"}
+{"event_id":"EVT-004","client_id":"CLI-002","amount_paise":1000000000,"state":"POSTED","effective_at":"2024-09-15T09:00:00","narration":"Opening balance"}
+{"event_id":"EVT-005","client_id":"CLI-002","amount_paise":-200000000,"state":"POSTED","effective_at":"2024-09-16T14:00:00","narration":"Equity purchase"}
+{"event_id":"EVT-006","client_id":"CLI-002","amount_paise":50000000,"state":"POSTED","effective_at":"2024-09-16T15:30:00","narration":"Dividend credit"}
+{"event_id":"EVT-007","client_id":"CLI-003","amount_paise":300000000,"state":"POSTED","effective_at":"2024-09-16T08:00:00","narration":"Fund transfer in"}
+{"event_id":"EVT-008","client_id":"CLI-003","amount_paise":-100000000,"state":"POSTED","effective_at":"2024-09-16T12:00:00","narration":"Purchase debit"}
+{"event_id":"EVT-009","client_id":"CLI-003","amount_paise":25000000,"state":"PENDING","effective_at":"2024-09-16T16:45:00","narration":"Pending inward NEFT"}
+{"event_id":"EVT-010","client_id":"CLI-004","amount_paise":250000000,"state":"POSTED","effective_at":"2024-09-14T09:00:00","narration":"Opening balance"}
+{"event_id":"EVT-011","client_id":"CLI-004","amount_paise":-80000000,"state":"POSTED","effective_at":"2024-09-16T10:30:00","narration":"Purchase debit"}
+{"event_id":"EVT-012","client_id":"CLI-004","amount_paise":120000000,"state":"POSTED","effective_at":"2024-09-16T13:00:00","narration":"Redemption credit"}
+{"event_id":"EVT-013","client_id":"CLI-004","amount_paise":30000000,"state":"PENDING","effective_at":"2024-09-16T17:30:00","narration":"Bank transfer pending - UTR duplicate check"}

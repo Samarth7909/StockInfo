@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head><title>DP Position Extract - Fictional Depository Export</title></head>
+<body>
+<h2>DP Position Extract</h2>
+<p>Cut Date: 2024-09-16 | Export Time: 2024-09-16T18:30:00 | Source: Fictional NSDL-like Depository</p>
+<table id="dp-positions" border="1">
+  <thead>
+    <tr>
+      <th>CLIENT_ID</th>
+      <th>ISIN</th>
+      <th>POSITION_TYPE</th>
+      <th>EXCHANGE_SYMBOL</th>
+      <th>SETTLED_QTY</th>
+      <th>MOVEMENT_STATE</th>
+      <th>PENDING_QTY</th>
+      <th>CUT_AT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- CLI-001: INFY matches internal (150 vs 150) -->
+    <tr>
+      <td>CLI-001</td>
+      <td>INE009A01021</td>
+      <td>EQUITY</td>
+      <td>INFY</td>
+      <td>150</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-001: HDFCBANK mismatch (DP=180, internal=200) -> HIGH case -->
+    <tr>
+      <td>CLI-001</td>
+      <td>INE040A01034</td>
+      <td>EQUITY</td>
+      <td>HDFCBANK</td>
+      <td>180</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-001: WIPRO with PENDING movement (settled=280, pending=20) -> pending DP case -->
+    <tr>
+      <td>CLI-001</td>
+      <td>INE467B01029</td>
+      <td>EQUITY</td>
+      <td>WIPRO</td>
+      <td>280</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <tr>
+      <td>CLI-001</td>
+      <td>INE467B01029</td>
+      <td>EQUITY</td>
+      <td>WIPRO</td>
+      <td>0</td>
+      <td>PENDING</td>
+      <td>20</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-002: INFY matches -->
+    <tr>
+      <td>CLI-002</td>
+      <td>INE009A01021</td>
+      <td>EQUITY</td>
+      <td>INFY</td>
+      <td>500</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-002: SBIN mismatch (DP=120, internal=100) -> HIGH case -->
+    <tr>
+      <td>CLI-002</td>
+      <td>INE062A01020</td>
+      <td>EQUITY</td>
+      <td>SBIN</td>
+      <td>120</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-003: HDFCBANK matches -->
+    <tr>
+      <td>CLI-003</td>
+      <td>INE040A01034</td>
+      <td>EQUITY</td>
+      <td>HDFCBANK</td>
+      <td>75</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-003: WIPRO matches -->
+    <tr>
+      <td>CLI-003</td>
+      <td>INE467B01029</td>
+      <td>EQUITY</td>
+      <td>WIPRO</td>
+      <td>120</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-004: INFY matches -->
+    <tr>
+      <td>CLI-004</td>
+      <td>INE009A01021</td>
+      <td>EQUITY</td>
+      <td>INFY</td>
+      <td>80</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-004: SBIN matches -->
+    <tr>
+      <td>CLI-004</td>
+      <td>INE062A01020</td>
+      <td>EQUITY</td>
+      <td>SBIN</td>
+      <td>60</td>
+      <td>SETTLED</td>
+      <td>0</td>
+      <td>2024-09-16T18:00:00</td>
+    </tr>
+    <!-- CLI-004: HDFCBANK missing from DP -> MISSING_SOURCE case -->
+  </tbody>
+</table>
+</body>
+</html>

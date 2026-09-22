@@ -1,0 +1,60 @@
+{
+  "generated_at": "2024-09-16T18:00:00",
+  "description": "Synthetic client ownership and demo user access map for assessment",
+  "clients": [
+    {
+      "client_id": "CLI-001",
+      "masked_name": "Client Alpha",
+      "desk_id": "DESK-A",
+      "account_type": "INDIVIDUAL"
+    },
+    {
+      "client_id": "CLI-002",
+      "masked_name": "Client Beta",
+      "desk_id": "DESK-A",
+      "account_type": "INDIVIDUAL"
+    },
+    {
+      "client_id": "CLI-003",
+      "masked_name": "Client Gamma",
+      "desk_id": "DESK-A",
+      "account_type": "CORPORATE"
+    },
+    {
+      "client_id": "CLI-004",
+      "masked_name": "Client Delta",
+      "desk_id": "DESK-A",
+      "account_type": "INDIVIDUAL"
+    }
+  ],
+  "demo_users": [
+    {
+      "username": "support1",
+      "password": "support123",
+      "role": "SUPPORT",
+      "accessible_clients": ["CLI-001", "CLI-002"],
+      "note": "Support sees masked summaries only"
+    },
+    {
+      "username": "invest1",
+      "password": "invest123",
+      "role": "INVESTIGATOR",
+      "accessible_clients": ["CLI-001", "CLI-002", "CLI-003"],
+      "note": "Investigator sees full case detail and can add notes"
+    },
+    {
+      "username": "opsleader",
+      "password": "ops123",
+      "role": "OPS_LEAD",
+      "accessible_clients": ["CLI-001", "CLI-002", "CLI-003", "CLI-004"],
+      "note": "Ops lead can import files and resolve cases"
+    },
+    {
+      "username": "auditor1",
+      "password": "audit123",
+      "role": "AUDITOR",
+      "accessible_clients": ["CLI-001", "CLI-002", "CLI-003", "CLI-004"],
+      "note": "Auditor reads evidence and history only, cannot edit"
+    }
+  ]
+}
