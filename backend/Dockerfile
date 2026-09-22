@@ -1,18 +1,24 @@
-# ── Build stage ──────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS build
-WORKDIR /app
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN ./mvnw dependency:go-offline -B --no-transfer-progress
-COPY src/ src/
-RUN ./mvnw package -DskipTests -B --no-transfer-progress
+FROM eclipse-temurin:21-jdk AS build
 
-# ── Runtime stage ─────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+WORKDIR /workspace
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+COPY src src
+
+RUN chmod +x mvnw && ./mvnw -DskipTests package
+
+FROM eclipse-temurin:21-jre
+
 WORKDIR /app
-RUN mkdir -p /data && addgroup -S appgroup && adduser -S appuser -G appgroup \
-    && chown -R appuser:appgroup /app /data
+RUN useradd --system --create-home --uid 10001 appuser
+COPY --from=build /workspace/target/*.jar app.jar
+RUN mkdir -p /app/data && chown -R appuser:appuser /app
+
 USER appuser
-COPY --from=build /app/target/ops-console-*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+VOLUME ["/app/data"]
+
+ENV DB_PATH=/app/data/ops_console.db
+ENV JAVA_OPTS=""
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
